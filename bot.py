@@ -43,7 +43,10 @@ _all_services: list = []
 _tg_categorized: dict = {}
 _cache_time: float = 0
 
-TARGET_CATEGORY = "Telegram: Post Reactions [Fast]"
+TARGET_CATEGORIES = [
+    "Telegram: Post Reactions [Fast]",
+    "Telegram: Post Reactions [Cheap]",
+]
 
 def get_markup_by_cat(cat: str) -> float:
     return config.DEFAULT_MARKUP
@@ -61,9 +64,12 @@ async def fetch_services():
         if not isinstance(data, list): return False
         _all_services = data
 
-        # Only show TARGET_CATEGORY services
-        filtered = [s for s in data if s.get("category", "") == TARGET_CATEGORY]
-        _tg_categorized = {TARGET_CATEGORY: filtered} if filtered else {}
+        # Only show TARGET_CATEGORIES services
+        _tg_categorized = {}
+        for cat in TARGET_CATEGORIES:
+            filtered = [s for s in data if s.get("category", "") == cat]
+            if filtered:
+                _tg_categorized[cat] = filtered
         _cache_time = time.time()
         logger.info(f"Fast Reactions loaded: {len(filtered)} services")
         return True
