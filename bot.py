@@ -161,10 +161,20 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
         nav.append(InlineKeyboardButton(text="Next ➡️", callback_data=f"svc_{cidx}_{page+1}"))
     if nav: rows.append(nav)
 
-    # Category tabs - 2 per row
+    # Category tabs - short names
+    SHORT_NAMES = {
+        "Telegram: Post Reactions [Fast]":  "⚡ Fast",
+        "Telegram: Post Reactions [Cheap]": "💰 Cheap",
+        "Telegram: Post Reactions [S4]":    "🔥 S4",
+        "Telegram: Post Reactions [Future NEW]": "🆕 Future",
+        "Telegram: Post Reactions [Premium]": "💎 Premium",
+        "Telegram: Post Reactions [Private channels]": "🔒 Private",
+        "Telegram: Post Reaction [Auto]":   "🤖 Auto",
+    }
     tab_row = []
     for i, cat in enumerate(cat_keys):
-        label = f"[ {cat} ]" if i == cidx else cat
+        short = SHORT_NAMES.get(cat, cat.replace("Telegram: Post Reactions", "").replace("Telegram:", "").strip()[:15])
+        label = f"✅ {short}" if i == cidx else short
         tab_row.append(InlineKeyboardButton(text=label, callback_data=f"svc_{i}_0"))
         if len(tab_row) == 2:
             rows.append(tab_row); tab_row = []
