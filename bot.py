@@ -421,6 +421,7 @@ async def cashfree_pay(cb: CallbackQuery):
 async def upi_pay(cb: CallbackQuery, state: FSMContext):
     import qrcode
     import io
+    from aiogram.types import BufferedInputFile
 
     amount = float(cb.data.split("_")[2])
     await state.update_data(upi_amount=amount)
@@ -457,7 +458,7 @@ async def upi_pay(cb: CallbackQuery, state: FSMContext):
     await cb.message.delete()
     await bot.send_photo(
         cb.from_user.id,
-        photo=buf,
+        photo=BufferedInputFile(buf.read(), filename="upi_qr.png"),
         caption=caption,
         parse_mode="HTML"
     )
