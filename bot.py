@@ -43,21 +43,10 @@ _all_services: list = []
 _tg_categorized: dict = {}
 _cache_time: float = 0
 
-REACTION_KW  = ["reaction", "react"]
-MEMBER_KW    = ["member", "subscriber"]
-VIEW_KW      = ["view", "seen", "watch", "story"]
-CATEGORY_ORDER = ["⚡ Reactions", "👥 Members", "👁 Views", "📦 Other Telegram"]
+TARGET_CATEGORY = "Telegram: Post Reactions [Fast]"
 
-def is_telegram_service(svc: dict) -> bool:
-    t = (svc.get("name", "") + " " + svc.get("category", "")).lower()
-    return "telegram" in t or " tg " in t or t.startswith("tg ")
-
-def get_tg_sub(svc: dict) -> str:
-    t = (svc.get("name", "") + " " + svc.get("category", "")).lower()
-    if any(k in t for k in REACTION_KW):  return "⚡ Reactions"
-    if any(k in t for k in MEMBER_KW):    return "👥 Members"
-    if any(k in t for k in VIEW_KW):      return "👁 Views"
-    return "📦 Other Telegram"
+def get_markup_by_cat(cat: str) -> float:
+    return config.DEFAULT_MARKUP
 
 async def fetch_services():
     global _all_services, _tg_categorized, _cache_time
@@ -71,13 +60,12 @@ async def fetch_services():
                 data = await r.json(content_type=None)
         if not isinstance(data, list): return False
         _all_services = data
-        cats = {c: [] for c in CATEGORY_ORDER}
-        for svc in data:
-            if is_telegram_service(svc):
-                cats[get_tg_sub(svc)].append(svc)
-        _tg_categorized = {k: v for k, v in cats.items() if v}
+
+        # Only show TARGET_CATEGORY services
+        filtered = [s for s in data if s.get("category", "") == TARGET_CATEGORY]
+        _tg_categorized = {TARGET_CATEGORY: filtered} if filtered else {}
         _cache_time = time.time()
-        logger.info(f"TG services: { {k: len(v) for k,v in _tg_categorized.items()} }")
+        logger.info(f"Fast Reactions loaded: {len(filtered)} services")
         return True
     except Exception as e:
         logger.error(f"fetch_services error: {e}")
@@ -106,9 +94,7 @@ async def get_usd_inr() -> float:
     return _usd_inr
 
 def get_markup(svc: dict) -> float:
-    sub = get_tg_sub(svc)
-    if sub == "👥 Members": return config.TG_MEMBER_MARKUP
-    return config.DEFAULT_MARKUP
+    return get_markup_by_cat(svc.get("category", ""))
 
 def cf_charge(amount: float) -> float:
     return round(amount * 1.02, 2)
