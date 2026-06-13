@@ -419,16 +419,46 @@ async def cashfree_pay(cb: CallbackQuery):
 
 @router.callback_query(F.data.startswith("pay_upi_"))
 async def upi_pay(cb: CallbackQuery, state: FSMContext):
+    import qrcode
+    import io
+
     amount = float(cb.data.split("_")[2])
     await state.update_data(upi_amount=amount)
     await state.set_state(RechargeStates.waiting_upi_screenshot)
-    await cb.message.edit_text(
+
+    # UPI deep link with amount pre-filled
+    upi_url = (
+        f"upi://pay?pa={config.UPI_ID}"
+        f"&pn={config.UPI_NAME.replace(' ', '%20')}"
+        f"&am={amount:.2f}"
+        f"&cu=INR"
+        f"&tn=SMM%20Wallet%20Recharge"
+    )
+
+    # QR generate karo
+    qr = qrcode.QRCode(box_size=10, border=4)
+    qr.add_data(upi_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    caption = (
         f"📱 <b>UPI Payment</b>\n\n"
-        f"Amount: <b>₹{amount:.0f}</b>\n"
-        f"UPI ID: <code>{config.UPI_ID}</code>\n"
-        f"Name: {config.UPI_NAME}\n\n"
-        f"1. Pay the amount\n"
-        f"2. Send screenshot here 👇",
+        f"💰 Amount: <b>₹{amount:.0f}</b>\n"
+        f"🔖 UPI ID: <code>{config.UPI_ID}</code>\n"
+        f"👤 Name: {config.UPI_NAME}\n\n"
+        f"1️⃣ Scan QR <b>ya</b> UPI ID se pay karo\n"
+        f"2️⃣ Screenshot yahan bhejo 👇"
+    )
+
+    await cb.message.delete()
+    await bot.send_photo(
+        cb.from_user.id,
+        photo=buf,
+        caption=caption,
         parse_mode="HTML"
     )
 
