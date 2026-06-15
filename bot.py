@@ -187,15 +187,30 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
 
 @router.message(F.text == "📋 Services")
 async def cmd_services(msg: Message):
-    wait = await msg.answer("⏳ Loading Telegram services...")
+    wait = await msg.answer("⏳ Loading...")
     ok = await fetch_services()
     if not ok or not _tg_categorized:
         await wait.edit_text("❌ Could not load services. Try again later.")
         return
-    usd = await get_usd_inr()
-    first = list(_tg_categorized.keys())[0]
-    text, kb = await build_page(first, 0, usd)
-    await wait.edit_text(text, parse_mode="HTML", reply_markup=kb)
+
+    cat_keys = list(_tg_categorized.keys())
+    SHORT_NAMES = {
+        "Telegram: Post Reactions [Fast]":  "⚡ Fast",
+        "Telegram: Post Reactions [Cheap]": "💰 Cheap",
+        "Telegram: Members &amp; Subscribers [ New ]": "👥 Members",
+    }
+
+    rows = []
+    tab_row = []
+    for i, cat in enumerate(cat_keys):
+        short = SHORT_NAMES.get(cat, cat[:15])
+        tab_row.append(InlineKeyboardButton(text=short, callback_data=f"svc_{i}_0"))
+        if len(tab_row) == 2:
+            rows.append(tab_row); tab_row = []
+    if tab_row: rows.append(tab_row)
+
+    kb = InlineKeyboardMarkup(inline_keyboard=rows)
+    await wait.edit_text("📋 <b>Select Category:</b>", parse_mode="HTML", reply_markup=kb)
 
 @router.callback_query(F.data.startswith("svc_"))
 async def cb_svc_page(cb: CallbackQuery):
