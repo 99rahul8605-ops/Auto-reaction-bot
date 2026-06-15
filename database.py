@@ -165,7 +165,7 @@ class Database:
             {"user_id": user_id},
             {"$setOnInsert": user},
             upsert=True
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
 
         return user
 
@@ -176,7 +176,7 @@ class Database:
         await self.db.commit()
         self._mongo_fire(self.mdb.users.update_one(
             {"user_id": user_id}, {"$inc": {"balance": -amount}}
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
 
     async def admin_update_balance(self, user_id: int, amount: float):
         await self.db.execute(
@@ -185,7 +185,7 @@ class Database:
         await self.db.commit()
         self._mongo_fire(self.mdb.users.update_one(
             {"user_id": user_id}, {"$inc": {"balance": amount}}
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
         async with self.db.execute("SELECT * FROM users WHERE user_id = ?", (user_id,)) as cur:
             row = await cur.fetchone()
             return dict(row) if row else None
@@ -216,7 +216,7 @@ class Database:
                "status": "pending", "start_count": 0, "remains": 0}
         self._mongo_fire(self.mdb.orders.update_one(
             {"smm_order_id": str(smm_order_id)}, {"$setOnInsert": doc}, upsert=True
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
 
     async def get_user_orders(self, user_id: int, limit=10) -> list:
         async with self.db.execute(
@@ -233,7 +233,7 @@ class Database:
         self._mongo_fire(self.mdb.orders.update_one(
             {"smm_order_id": smm_order_id},
             {"$set": {"status": status, "start_count": start_count, "remains": remains}}
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
 
     async def count_user_orders(self, user_id: int) -> int:
         async with self.db.execute("SELECT COUNT(*) FROM orders WHERE user_id = ?", (user_id,)) as cur:
@@ -263,7 +263,7 @@ class Database:
                "charged": charged, "method": method, "status": "pending"}
         self._mongo_fire(self.mdb.recharges.update_one(
             {"order_id": order_id}, {"$setOnInsert": doc}, upsert=True
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
 
     async def get_recharge(self, order_id: str) -> dict:
         async with self.db.execute("SELECT * FROM recharges WHERE order_id = ?", (order_id,)) as cur:
@@ -276,17 +276,17 @@ class Database:
         await self.db.commit()
         self._mongo_fire(self.mdb.recharges.update_one(
             {"order_id": order_id}, {"$set": {"status": "completed"}}
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
         self._mongo_fire(self.mdb.users.update_one(
             {"user_id": user_id}, {"$inc": {"balance": amount}}
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
 
     async def reject_recharge(self, order_id: str):
         await self.db.execute("UPDATE recharges SET status='rejected' WHERE order_id=?", (order_id,))
         await self.db.commit()
         self._mongo_fire(self.mdb.recharges.update_one(
             {"order_id": order_id}, {"$set": {"status": "rejected"}}
-        ) if self.mdb else asyncio.sleep(0))
+        ) if self.mdb is not None else asyncio.sleep(0))
 
     # ─── Stats ────────────────────────────────────────────────────────────────
 
