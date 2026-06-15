@@ -581,7 +581,8 @@ async def admin_panel(msg: Message):
         [InlineKeyboardButton(text="➕ Add Balance",  callback_data="adm_addbal"),
          InlineKeyboardButton(text="📢 Broadcast",    callback_data="adm_broadcast")],
         [InlineKeyboardButton(text="👥 Users",        callback_data="adm_users"),
-         InlineKeyboardButton(text="📦 Orders",       callback_data="adm_orders")]
+         InlineKeyboardButton(text="📦 Orders",       callback_data="adm_orders")],
+        [InlineKeyboardButton(text="🔄 Refresh Services", callback_data="adm_refresh_services")]
     ])
     await msg.answer(
         f"🔧 <b>Admin Panel</b>\n\n"
@@ -650,6 +651,26 @@ async def adm_orders(cb: CallbackQuery):
     text = "📦 <b>Recent Orders</b>\n\n" + "".join(
         f"• #{o['smm_order_id']} | {o['service_name'][:25]} | ₹{o['cost']} | {o['status']}\n" for o in orders)
     await cb.message.edit_text(text, parse_mode="HTML")
+
+@router.callback_query(F.data == "adm_refresh_services")
+async def adm_refresh_services(cb: CallbackQuery):
+    if cb.from_user.id not in config.ADMIN_IDS: return
+    global _cache_time
+    _cache_time = 0  # Cache reset
+    await cb.answer("⏳ Refreshing...")
+    ok = await fetch_services()
+    if ok:
+        cats = list(_tg_categorized.keys())
+        total = sum(len(_tg_categorized[c]) for c in cats)
+        await cb.message.answer(
+            f"✅ <b>Services Refreshed!</b>\n\n"
+            f"📂 Categories: {len(cats)}\n"
+            f"🔧 Total Services: {total}\n\n" +
+            "\n".join(f"• {c}: {len(_tg_categorized[c])} services" for c in cats),
+            parse_mode="HTML"
+        )
+    else:
+        await cb.message.answer("❌ Refresh failed. Try again.")
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
