@@ -512,10 +512,21 @@ async def upi_approve(cb: CallbackQuery):
         await cb.answer("Already processed!", show_alert=True); return
     await db.complete_recharge(order_id, user_id, amount)
     user = await db.get_or_create_user(user_id, "", "")
-    await cb.message.edit_caption(cb.message.caption + f"\n\n✅ Approved by @{cb.from_user.username}", parse_mode="HTML")
-    try: await bot.send_message(user_id, f"✅ ₹{amount:.0f} added! Balance: ₹{user['balance']:.2f}")
+    # Edit caption with fallback
+    try:
+        await cb.message.edit_caption(
+            (cb.message.caption or "") + f"\n\n✅ Approved by @{cb.from_user.username}",
+            parse_mode="HTML",
+            reply_markup=None
+        )
+    except Exception:
+        try:
+            await cb.message.reply(f"✅ Approved! Order: {order_id}")
+        except Exception: pass
+    try:
+        await bot.send_message(user_id, f"✅ <b>Payment Approved!</b>\n₹{amount:.0f} added!\nNew Balance: ₹{user['balance']:.2f}", parse_mode="HTML")
     except Exception: pass
-    await cb.answer("✅ Approved!")
+    await cb.answer("✅ Approved & balance credited!")
 
 @router.callback_query(F.data.startswith("upi_reject_"))
 async def upi_reject(cb: CallbackQuery):
@@ -523,8 +534,18 @@ async def upi_reject(cb: CallbackQuery):
     parts = cb.data.split("_")
     order_id, user_id = parts[2], int(parts[3])
     await db.reject_recharge(order_id)
-    await cb.message.edit_caption(cb.message.caption + f"\n\n❌ Rejected by @{cb.from_user.username}", parse_mode="HTML")
-    try: await bot.send_message(user_id, "❌ UPI payment rejected. Contact support.")
+    try:
+        await cb.message.edit_caption(
+            (cb.message.caption or "") + f"\n\n❌ Rejected by @{cb.from_user.username}",
+            parse_mode="HTML",
+            reply_markup=None
+        )
+    except Exception:
+        try:
+            await cb.message.reply(f"❌ Rejected! Order: {order_id}")
+        except Exception: pass
+    try:
+        await bot.send_message(user_id, "❌ <b>Payment Rejected</b>\nContact support if you believe this is an error.", parse_mode="HTML")
     except Exception: pass
     await cb.answer("❌ Rejected!")
 
