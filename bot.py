@@ -514,11 +514,8 @@ async def upi_approve(cb: CallbackQuery):
     user = await db.get_or_create_user(user_id, "", "")
     # Edit caption with fallback
     try:
-        await cb.message.edit_caption(
-            (cb.message.caption or "") + f"\n\n✅ Approved by @{cb.from_user.username}",
-            parse_mode="HTML",
-            reply_markup=None
-        )
+        new_caption = (cb.message.caption or "") + f"\n\n✅ Approved by @{cb.from_user.username}"
+        await cb.message.edit_caption(new_caption, parse_mode="HTML")
     except Exception:
         try:
             await cb.message.reply(f"✅ Approved! Order: {order_id}")
@@ -535,11 +532,8 @@ async def upi_reject(cb: CallbackQuery):
     order_id, user_id = parts[2], int(parts[3])
     await db.reject_recharge(order_id)
     try:
-        await cb.message.edit_caption(
-            (cb.message.caption or "") + f"\n\n❌ Rejected by @{cb.from_user.username}",
-            parse_mode="HTML",
-            reply_markup=None
-        )
+        new_caption = (cb.message.caption or "") + f"\n\n❌ Rejected by @{cb.from_user.username}"
+        await cb.message.edit_caption(new_caption, parse_mode="HTML")
     except Exception:
         try:
             await cb.message.reply(f"❌ Rejected! Order: {order_id}")
