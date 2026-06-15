@@ -46,6 +46,7 @@ _cache_time: float = 0
 TARGET_CATEGORIES = [
     "Telegram: Post Reactions [Fast]",
     "Telegram: Post Reactions [Cheap]",
+    "Telegram: Members & Subscribers [ New ]",
 ]
 
 def get_markup_by_cat(cat: str) -> float:
@@ -144,8 +145,11 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
     for svc in chunk:
         m = get_markup(svc)
         rate = round(float(svc["rate"]) * usd * m, 4)
+        desc = svc.get("desc", "") or svc.get("description", "")
+        desc_line = f"   📝 {desc[:100]}\n" if desc else ""
         text += (
             f"🆔 <code>{svc['service']}</code> — {svc['name'][:50]}\n"
+            f"{desc_line}"
             f"   💰 ₹{rate}/1k | Min: {svc['min']} Max: {svc['max']}\n\n"
         )
 
@@ -170,6 +174,7 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
         "Telegram: Post Reactions [Premium]": "💎 Premium",
         "Telegram: Post Reactions [Private channels]": "🔒 Private",
         "Telegram: Post Reaction [Auto]":   "🤖 Auto",
+        "Telegram: Members & Subscribers [ New ]": "👥 Members",
     }
     tab_row = []
     for i, cat in enumerate(cat_keys):
