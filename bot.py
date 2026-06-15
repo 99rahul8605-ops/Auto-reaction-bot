@@ -514,12 +514,15 @@ async def upi_approve(cb: CallbackQuery):
     user = await db.get_or_create_user(user_id, "", "")
     # Edit caption with fallback
     try:
-        new_caption = (cb.message.caption or "") + f"\n\n✅ Approved by @{cb.from_user.username}"
-        await cb.message.edit_caption(new_caption, parse_mode="HTML")
-    except Exception:
+        old_caption = cb.message.caption or ""
+        # Strip any HTML, use plain text to avoid parse errors
+        new_caption = old_caption + f"\n\n✅ Approved by @{cb.from_user.username}"
         try:
-            await cb.message.reply(f"✅ Approved! Order: {order_id}")
-        except Exception: pass
+            await cb.message.edit_caption(new_caption)
+        except Exception:
+            await cb.message.edit_caption(f"✅ Approved!\nOrder: {order_id}\nAmount: ₹{amount}")
+    except Exception as e:
+        logger.error(f"edit_caption error: {e}")
     try:
         await bot.send_message(user_id, f"✅ <b>Payment Approved!</b>\n₹{amount:.0f} added!\nNew Balance: ₹{user['balance']:.2f}", parse_mode="HTML")
     except Exception: pass
@@ -532,12 +535,14 @@ async def upi_reject(cb: CallbackQuery):
     order_id, user_id = parts[2], int(parts[3])
     await db.reject_recharge(order_id)
     try:
-        new_caption = (cb.message.caption or "") + f"\n\n❌ Rejected by @{cb.from_user.username}"
-        await cb.message.edit_caption(new_caption, parse_mode="HTML")
-    except Exception:
+        old_caption = cb.message.caption or ""
+        new_caption = old_caption + f"\n\n❌ Rejected by @{cb.from_user.username}"
         try:
-            await cb.message.reply(f"❌ Rejected! Order: {order_id}")
-        except Exception: pass
+            await cb.message.edit_caption(new_caption)
+        except Exception:
+            await cb.message.edit_caption(f"❌ Rejected!\nOrder: {order_id}")
+    except Exception as e:
+        logger.error(f"edit_caption error: {e}")
     try:
         await bot.send_message(user_id, "❌ <b>Payment Rejected</b>\nContact support if you believe this is an error.", parse_mode="HTML")
     except Exception: pass
