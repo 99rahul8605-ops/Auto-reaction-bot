@@ -67,11 +67,8 @@ async def fetch_services():
 
         # Only show TARGET_CATEGORIES services
         _tg_categorized = {}
-        all_cats = set(s.get("category", "") for s in data)
-        logger.info(f"ALL CATEGORIES FROM API: {sorted(all_cats)}")
         for cat in TARGET_CATEGORIES:
             filtered = [s for s in data if s.get("category", "") == cat]
-            logger.info(f"Category '{cat}' matched {len(filtered)} services")
             if filtered:
                 _tg_categorized[cat] = filtered
         _cache_time = time.time()
@@ -148,11 +145,8 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
     for svc in chunk:
         m = get_markup(svc)
         rate = round(float(svc["rate"]) * usd * m, 4)
-        desc = svc.get("desc", "") or svc.get("description", "")
-        desc_line = f"   📝 {desc[:100]}\n" if desc else ""
         text += (
             f"🆔 <code>{svc['service']}</code> — {svc['name'][:50]}\n"
-            f"{desc_line}"
             f"   💰 ₹{rate}/1k | Min: {svc['min']} Max: {svc['max']}\n\n"
         )
 
@@ -324,8 +318,15 @@ async def confirm_order(cb: CallbackQuery, state: FSMContext):
         )
         await bot.send_message(cb.from_user.id, "✅ Order placed!", reply_markup=main_kb(cb.from_user.id))
     else:
-        await cb.message.edit_text(f"❌ Order failed: {res.get('error', 'Unknown')}")
-        await bot.send_message(cb.from_user.id, "❌ Failed.", reply_markup=main_kb(cb.from_user.id))
+        error = res.get("error", "").lower()
+        if any(k in error for k in ["funds", "balance", "credit", "money"]):
+            msg_text = "⚠️ Service temporarily unavailable. Please try again later or contact support."
+        elif "invalid" in error or "not found" in error:
+            msg_text = "❌ Invalid order details. Please check the link and try again."
+        else:
+            msg_text = "⚠️ Could not place order. Please try again later."
+        await cb.message.edit_text(msg_text)
+        await bot.send_message(cb.from_user.id, msg_text, reply_markup=main_kb(cb.from_user.id))
     await state.clear()
 
 @router.callback_query(F.data == "cancel_order")
@@ -427,47 +428,16 @@ async def cashfree_pay(cb: CallbackQuery):
 
 @router.callback_query(F.data.startswith("pay_upi_"))
 async def upi_pay(cb: CallbackQuery, state: FSMContext):
-    import qrcode
-    import io
-    from aiogram.types import BufferedInputFile
-
     amount = float(cb.data.split("_")[2])
     await state.update_data(upi_amount=amount)
     await state.set_state(RechargeStates.waiting_upi_screenshot)
-
-    # UPI deep link with amount pre-filled
-    upi_url = (
-        f"upi://pay?pa={config.UPI_ID}"
-        f"&pn={config.UPI_NAME.replace(' ', '%20')}"
-        f"&am={amount:.2f}"
-        f"&cu=INR"
-        f"&tn=SMM%20Wallet%20Recharge"
-    )
-
-    # QR generate karo
-    qr = qrcode.QRCode(box_size=10, border=4)
-    qr.add_data(upi_url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-
-    caption = (
+    await cb.message.edit_text(
         f"📱 <b>UPI Payment</b>\n\n"
-        f"💰 Amount: <b>₹{amount:.0f}</b>\n"
-        f"🔖 UPI ID: <code>{config.UPI_ID}</code>\n"
-        f"👤 Name: {config.UPI_NAME}\n\n"
-        f"1️⃣ Scan QR <b>ya</b> UPI ID se pay karo\n"
-        f"2️⃣ Screenshot yahan bhejo 👇"
-    )
-
-    await cb.message.delete()
-    await bot.send_photo(
-        cb.from_user.id,
-        photo=BufferedInputFile(buf.read(), filename="upi_qr.png"),
-        caption=caption,
+        f"Amount: <b>₹{amount:.0f}</b>\n"
+        f"UPI ID: <code>{config.UPI_ID}</code>\n"
+        f"Name: {config.UPI_NAME}\n\n"
+        f"1. Pay the amount\n"
+        f"2. Send screenshot here 👇",
         parse_mode="HTML"
     )
 
@@ -535,10 +505,7 @@ async def upi_approve(cb: CallbackQuery):
         await cb.answer("Already processed!", show_alert=True); return
     await db.complete_recharge(order_id, user_id, amount)
     user = await db.get_or_create_user(user_id, "", "")
-    try:
-        await cb.message.edit_caption(cb.message.caption + f"\n\n✅ Approved by @{cb.from_user.username}", parse_mode="HTML")
-    except Exception:
-        pass
+    await cb.message.edit_caption(cb.message.caption + f"\n\n✅ Approved by @{cb.from_user.username}", parse_mode="HTML")
     try: await bot.send_message(user_id, f"✅ ₹{amount:.0f} added! Balance: ₹{user['balance']:.2f}")
     except Exception: pass
     await cb.answer("✅ Approved!")
@@ -549,10 +516,7 @@ async def upi_reject(cb: CallbackQuery):
     parts = cb.data.split("_")
     order_id, user_id = parts[2], int(parts[3])
     await db.reject_recharge(order_id)
-    try:
-        await cb.message.edit_caption(cb.message.caption + f"\n\n❌ Rejected by @{cb.from_user.username}", parse_mode="HTML")
-    except Exception:
-        pass
+    await cb.message.edit_caption(cb.message.caption + f"\n\n❌ Rejected by @{cb.from_user.username}", parse_mode="HTML")
     try: await bot.send_message(user_id, "❌ UPI payment rejected. Contact support.")
     except Exception: pass
     await cb.answer("❌ Rejected!")
@@ -584,8 +548,7 @@ async def admin_panel(msg: Message):
         [InlineKeyboardButton(text="➕ Add Balance",  callback_data="adm_addbal"),
          InlineKeyboardButton(text="📢 Broadcast",    callback_data="adm_broadcast")],
         [InlineKeyboardButton(text="👥 Users",        callback_data="adm_users"),
-         InlineKeyboardButton(text="📦 Orders",       callback_data="adm_orders")],
-        [InlineKeyboardButton(text="🔄 Refresh Services", callback_data="adm_refresh_services")]
+         InlineKeyboardButton(text="📦 Orders",       callback_data="adm_orders")]
     ])
     await msg.answer(
         f"🔧 <b>Admin Panel</b>\n\n"
@@ -654,37 +617,6 @@ async def adm_orders(cb: CallbackQuery):
     text = "📦 <b>Recent Orders</b>\n\n" + "".join(
         f"• #{o['smm_order_id']} | {o['service_name'][:25]} | ₹{o['cost']} | {o['status']}\n" for o in orders)
     await cb.message.edit_text(text, parse_mode="HTML")
-
-@router.callback_query(F.data == "adm_refresh_services")
-async def adm_refresh_services(cb: CallbackQuery):
-    if cb.from_user.id not in config.ADMIN_IDS: return
-    global _cache_time
-    _cache_time = 0  # Cache reset
-    await cb.answer("⏳ Refreshing...")
-    ok = await fetch_services()
-    if ok:
-        cats = list(_tg_categorized.keys())
-        total = sum(len(_tg_categorized[c]) for c in cats)
-        await cb.message.answer(
-            f"✅ <b>Services Refreshed!</b>\n\n"
-            f"📂 Categories: {len(cats)}\n"
-            f"🔧 Total Services: {total}\n\n" +
-            "\n".join(f"• {c}: {len(_tg_categorized[c])} services" for c in cats),
-            parse_mode="HTML"
-        )
-    else:
-        await cb.message.answer("❌ Refresh failed. Try again.")
-
-@router.callback_query(F.data == "adm_list_cats")
-async def adm_list_cats(cb: CallbackQuery):
-    if cb.from_user.id not in config.ADMIN_IDS: return
-    await cb.answer("⏳ Fetching all categories...")
-    all_cats = sorted(set(s.get("category", "") for s in _all_services if "member" in s.get("category", "").lower() or "subscri" in s.get("category", "").lower()))
-    if not all_cats:
-        await cb.message.answer("❌ No member/subscriber categories found. Try refreshing first.")
-        return
-    text = "📂 <b>Members/Subscribers Categories:</b>\n\n" + "\n".join(f"• <code>{c}</code>" for c in all_cats)
-    await cb.message.answer(text, parse_mode="HTML")
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
