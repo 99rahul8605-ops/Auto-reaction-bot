@@ -462,8 +462,8 @@ async def upi_screenshot(msg: Message, state: FSMContext):
     for aid in config.ADMIN_IDS:
         try:
             await bot.send_photo(aid, photo=msg.photo[-1].file_id,
-                caption=f"💰 <b>UPI Request</b>\n👤 {msg.from_user.full_name} (<code>{msg.from_user.id}</code>)\n💵 ₹{amount}\n🔖 <code>{order_id}</code>",
-                parse_mode="HTML", reply_markup=kb)
+                caption=f"💰 UPI Request\n👤 {msg.from_user.full_name} ({msg.from_user.id})\n💵 ₹{amount}\n🔖 {order_id}",
+                reply_markup=kb)
         except Exception: pass
     await msg.answer(
         f"✅ Screenshot received!\nOrder: <code>{order_id}</code>\n⏳ Will be verified soon.",
@@ -512,17 +512,11 @@ async def upi_approve(cb: CallbackQuery):
         await cb.answer("Already processed!", show_alert=True); return
     await db.complete_recharge(order_id, user_id, amount)
     user = await db.get_or_create_user(user_id, "", "")
-    # Edit caption with fallback
     try:
-        old_caption = cb.message.caption or ""
-        # Strip any HTML, use plain text to avoid parse errors
-        new_caption = old_caption + f"\n\n✅ Approved by @{cb.from_user.username}"
-        try:
-            await cb.message.edit_caption(new_caption)
-        except Exception:
-            await cb.message.edit_caption(f"✅ Approved!\nOrder: {order_id}\nAmount: ₹{amount}")
+        old_cap = cb.message.caption or ""
+        await cb.message.edit_caption(old_cap + f"\n\n✅ Approved by @{cb.from_user.username}")
     except Exception as e:
-        logger.error(f"edit_caption error: {e}")
+        logger.error(f"edit_caption approve error: {e}")
     try:
         await bot.send_message(user_id, f"✅ <b>Payment Approved!</b>\n₹{amount:.0f} added!\nNew Balance: ₹{user['balance']:.2f}", parse_mode="HTML")
     except Exception: pass
@@ -535,14 +529,10 @@ async def upi_reject(cb: CallbackQuery):
     order_id, user_id = parts[2], int(parts[3])
     await db.reject_recharge(order_id)
     try:
-        old_caption = cb.message.caption or ""
-        new_caption = old_caption + f"\n\n❌ Rejected by @{cb.from_user.username}"
-        try:
-            await cb.message.edit_caption(new_caption)
-        except Exception:
-            await cb.message.edit_caption(f"❌ Rejected!\nOrder: {order_id}")
+        old_cap = cb.message.caption or ""
+        await cb.message.edit_caption(old_cap + f"\n\n❌ Rejected by @{cb.from_user.username}")
     except Exception as e:
-        logger.error(f"edit_caption error: {e}")
+        logger.error(f"edit_caption reject error: {e}")
     try:
         await bot.send_message(user_id, "❌ <b>Payment Rejected</b>\nContact support if you believe this is an error.", parse_mode="HTML")
     except Exception: pass
