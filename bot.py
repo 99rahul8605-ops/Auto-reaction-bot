@@ -512,17 +512,13 @@ async def upi_approve(cb: CallbackQuery):
         await cb.answer("Already processed!", show_alert=True); return
     await db.complete_recharge(order_id, user_id, amount)
     user = await db.get_or_create_user(user_id, "", "")
+    # Remove buttons from photo
+    await cb.message.edit_reply_markup(reply_markup=None)
+    # Send new status message to admin
+    await cb.message.reply(f"✅ APPROVED by @{cb.from_user.username}\nOrder: {order_id}\nAmount: Rs {amount:.0f}")
+    # Notify user
     try:
-        old_cap = cb.message.caption or ""
-        await cb.message.edit_caption(
-            old_cap + f"\n\n✅ Approved by @{cb.from_user.username}",
-            parse_mode="HTML",
-            reply_markup=None
-        )
-    except Exception as e:
-        logger.error(f"edit_caption approve error: {e}")
-    try:
-        await bot.send_message(user_id, f"✅ <b>Payment Approved!</b>\n₹{amount:.0f} added!\nNew Balance: ₹{user['balance']:.2f}", parse_mode="HTML")
+        await bot.send_message(user_id, f"✅ Payment Approved!\nRs {amount:.0f} added!\nNew Balance: Rs {user['balance']:.2f}")
     except Exception: pass
     await cb.answer("✅ Approved & balance credited!")
 
@@ -532,17 +528,13 @@ async def upi_reject(cb: CallbackQuery):
     parts = cb.data.split("_")
     order_id, user_id = parts[2], int(parts[3])
     await db.reject_recharge(order_id)
+    # Remove buttons from photo
+    await cb.message.edit_reply_markup(reply_markup=None)
+    # Send new status message to admin
+    await cb.message.reply(f"❌ REJECTED by @{cb.from_user.username}\nOrder: {order_id}")
+    # Notify user
     try:
-        old_cap = cb.message.caption or ""
-        await cb.message.edit_caption(
-            old_cap + f"\n\n❌ Rejected by @{cb.from_user.username}",
-            parse_mode="HTML",
-            reply_markup=None
-        )
-    except Exception as e:
-        logger.error(f"edit_caption reject error: {e}")
-    try:
-        await bot.send_message(user_id, "❌ <b>Payment Rejected</b>\nContact support if you believe this is an error.", parse_mode="HTML")
+        await bot.send_message(user_id, "❌ Payment Rejected. Contact support.")
     except Exception: pass
     await cb.answer("❌ Rejected!")
 
