@@ -582,7 +582,8 @@ async def admin_panel(msg: Message):
          InlineKeyboardButton(text="📢 Broadcast",    callback_data="adm_broadcast")],
         [InlineKeyboardButton(text="👥 Users",        callback_data="adm_users"),
          InlineKeyboardButton(text="📦 Orders",       callback_data="adm_orders")],
-        [InlineKeyboardButton(text="🔄 Refresh Services", callback_data="adm_refresh_services")]
+        [InlineKeyboardButton(text="🔄 Refresh Services", callback_data="adm_refresh_services")],
+        [InlineKeyboardButton(text="🔍 Check Member Categories", callback_data="adm_list_cats")]
     ])
     await msg.answer(
         f"🔧 <b>Admin Panel</b>\n\n"
@@ -671,6 +672,17 @@ async def adm_refresh_services(cb: CallbackQuery):
         )
     else:
         await cb.message.answer("❌ Refresh failed. Try again.")
+
+@router.callback_query(F.data == "adm_list_cats")
+async def adm_list_cats(cb: CallbackQuery):
+    if cb.from_user.id not in config.ADMIN_IDS: return
+    await cb.answer("⏳ Fetching all categories...")
+    all_cats = sorted(set(s.get("category", "") for s in _all_services if "member" in s.get("category", "").lower() or "subscri" in s.get("category", "").lower()))
+    if not all_cats:
+        await cb.message.answer("❌ No member/subscriber categories found. Try refreshing first.")
+        return
+    text = "📂 <b>Members/Subscribers Categories:</b>\n\n" + "\n".join(f"• <code>{c}</code>" for c in all_cats)
+    await cb.message.answer(text, parse_mode="HTML")
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
