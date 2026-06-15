@@ -582,8 +582,7 @@ async def admin_panel(msg: Message):
          InlineKeyboardButton(text="📢 Broadcast",    callback_data="adm_broadcast")],
         [InlineKeyboardButton(text="👥 Users",        callback_data="adm_users"),
          InlineKeyboardButton(text="📦 Orders",       callback_data="adm_orders")],
-        [InlineKeyboardButton(text="🔄 Refresh Services", callback_data="adm_refresh_services")],
-        [InlineKeyboardButton(text="🔍 Check Member Categories", callback_data="adm_list_cats")]
+        [InlineKeyboardButton(text="🔄 Refresh Services", callback_data="adm_refresh_services")]
     ])
     await msg.answer(
         f"🔧 <b>Admin Panel</b>\n\n"
