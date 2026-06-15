@@ -514,7 +514,11 @@ async def upi_approve(cb: CallbackQuery):
     user = await db.get_or_create_user(user_id, "", "")
     try:
         old_cap = cb.message.caption or ""
-        await cb.message.edit_caption(old_cap + f"\n\n✅ Approved by @{cb.from_user.username}")
+        await cb.message.edit_caption(
+            old_cap + f"\n\n✅ Approved by @{cb.from_user.username}",
+            parse_mode="HTML",
+            reply_markup=None
+        )
     except Exception as e:
         logger.error(f"edit_caption approve error: {e}")
     try:
@@ -530,7 +534,11 @@ async def upi_reject(cb: CallbackQuery):
     await db.reject_recharge(order_id)
     try:
         old_cap = cb.message.caption or ""
-        await cb.message.edit_caption(old_cap + f"\n\n❌ Rejected by @{cb.from_user.username}")
+        await cb.message.edit_caption(
+            old_cap + f"\n\n❌ Rejected by @{cb.from_user.username}",
+            parse_mode="HTML",
+            reply_markup=None
+        )
     except Exception as e:
         logger.error(f"edit_caption reject error: {e}")
     try:
