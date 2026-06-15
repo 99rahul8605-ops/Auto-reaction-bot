@@ -14,6 +14,10 @@ class Config:
     SMM_API_URL: str = os.getenv("SMM_API_URL", "https://smmpanelone.com/api/v2")
     SMM_API_KEY: str = os.getenv("SMM_API_KEY", "")
 
+    # MongoDB
+    MONGO_URI: str = os.getenv("MONGO_URI", "")
+    MONGO_DB_NAME: str = os.getenv("MONGO_DB_NAME", "smm_bot")
+
     # Markup
     DEFAULT_MARKUP: float = 1 + float(os.getenv("DEFAULT_MARKUP_PERCENT", "20")) / 100
     TG_MEMBER_MARKUP: float = 1 + float(os.getenv("TG_MEMBER_MARKUP_PERCENT", "50")) / 100

@@ -46,7 +46,7 @@ _cache_time: float = 0
 TARGET_CATEGORIES = [
     "Telegram: Post Reactions [Fast]",
     "Telegram: Post Reactions [Cheap]",
-    "Telegram: Members & Subscribers [ New ]",
+    "Telegram: Members &amp; Subscribers [ New ]",
 ]
 
 def get_markup_by_cat(cat: str) -> float:
@@ -171,7 +171,7 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
         "Telegram: Post Reactions [Premium]": "💎 Premium",
         "Telegram: Post Reactions [Private channels]": "🔒 Private",
         "Telegram: Post Reaction [Auto]":   "🤖 Auto",
-        "Telegram: Members & Subscribers [ New ]": "👥 Members",
+        "Telegram: Members &amp; Subscribers [ New ]": "👥 Members",
     }
     tab_row = []
     for i, cat in enumerate(cat_keys):
