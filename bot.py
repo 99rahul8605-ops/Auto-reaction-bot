@@ -67,8 +67,11 @@ async def fetch_services():
 
         # Only show TARGET_CATEGORIES services
         _tg_categorized = {}
+        all_cats = set(s.get("category", "") for s in data)
+        logger.info(f"ALL CATEGORIES FROM API: {sorted(all_cats)}")
         for cat in TARGET_CATEGORIES:
             filtered = [s for s in data if s.get("category", "") == cat]
+            logger.info(f"Category '{cat}' matched {len(filtered)} services")
             if filtered:
                 _tg_categorized[cat] = filtered
         _cache_time = time.time()
