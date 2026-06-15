@@ -173,14 +173,10 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
         "Telegram: Post Reaction [Auto]":   "🤖 Auto",
         "Telegram: Members &amp; Subscribers [ New ]": "👥 Members",
     }
-    tab_row = []
     for i, cat in enumerate(cat_keys):
         short = SHORT_NAMES.get(cat, cat.replace("Telegram: Post Reactions", "").replace("Telegram:", "").strip()[:15])
         label = f"✅ {short}" if i == cidx else short
-        tab_row.append(InlineKeyboardButton(text=label, callback_data=f"svc_{i}_0"))
-        if len(tab_row) == 2:
-            rows.append(tab_row); tab_row = []
-    if tab_row: rows.append(tab_row)
+        rows.append([InlineKeyboardButton(text=label, callback_data=f"svc_{i}_0")])
 
     rows.append([InlineKeyboardButton(text="🛒 Place Order", callback_data="go_order")])
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
@@ -201,13 +197,9 @@ async def cmd_services(msg: Message):
     }
 
     rows = []
-    tab_row = []
     for i, cat in enumerate(cat_keys):
         short = SHORT_NAMES.get(cat, cat[:15])
-        tab_row.append(InlineKeyboardButton(text=short, callback_data=f"svc_{i}_0"))
-        if len(tab_row) == 2:
-            rows.append(tab_row); tab_row = []
-    if tab_row: rows.append(tab_row)
+        rows.append([InlineKeyboardButton(text=short, callback_data=f"svc_{i}_0")])
 
     kb = InlineKeyboardMarkup(inline_keyboard=rows)
     await wait.edit_text("📋 <b>Select Category:</b>", parse_mode="HTML", reply_markup=kb)
