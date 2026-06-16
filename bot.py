@@ -147,8 +147,9 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
         m = get_markup(svc)
         rate = round(float(svc["rate"]) * usd * m, 4)
         text += (
-            f"🆔 <code>{svc['service']}</code> — {svc['name'][:50]}\n"
-            f"   💰 ₹{rate}/1k | Min: {svc['min']} Max: {svc['max']}\n\n"
+            f"🆔 <code>{svc['service']}</code>\n"
+            f"📦 {svc['name']}\n"
+            f"💰 ₹{rate}/1k | Min: {svc['min']} Max: {svc['max']}\n\n"
         )
 
     cat_keys = list(_tg_categorized.keys())
