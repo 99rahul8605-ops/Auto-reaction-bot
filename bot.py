@@ -47,6 +47,7 @@ TARGET_CATEGORIES = [
     "Telegram: Post Reactions [Fast]",
     "Telegram: Post Reactions [Cheap]",
     "Telegram: Members &amp; Subscribers [ New ]",
+    "Telegram: Members &amp; Subscribers [ Cheap ]",
 ]
 
 def get_markup_by_cat(cat: str) -> float:
@@ -164,14 +165,16 @@ async def build_page(cat_name: str, page: int, usd: float) -> tuple:
 
     # Category tabs - short names
     SHORT_NAMES = {
-        "Telegram: Post Reactions [Fast]":  "⚡ Fast",
-        "Telegram: Post Reactions [Cheap]": "💰 Cheap",
+        "Telegram: Post Reactions [Fast]":  "⚡ Fast Reaction",
+        "Telegram: Post Reactions [Cheap]": "💰 Cheap Reaction",
         "Telegram: Post Reactions [S4]":    "🔥 S4",
         "Telegram: Post Reactions [Future NEW]": "🆕 Future",
         "Telegram: Post Reactions [Premium]": "💎 Premium",
         "Telegram: Post Reactions [Private channels]": "🔒 Private",
         "Telegram: Post Reaction [Auto]":   "🤖 Auto",
-        "Telegram: Members &amp; Subscribers [ New ]": "👥 Members",
+        "Telegram: Members &amp; Subscribers [ New ]": "👥 Add Members",
+        "Telegram: Members &amp; Subscribers [ Cheap ]": "💸 Cheap Members",
+        "Telegram: Members &amp; Subscribers [ Cheap ]": "💸 Cheap Members",
     }
     for i, cat in enumerate(cat_keys):
         short = SHORT_NAMES.get(cat, cat.replace("Telegram: Post Reactions", "").replace("Telegram:", "").strip()[:15])
@@ -191,9 +194,11 @@ async def cmd_services(msg: Message):
 
     cat_keys = list(_tg_categorized.keys())
     SHORT_NAMES = {
-        "Telegram: Post Reactions [Fast]":  "⚡ Fast",
-        "Telegram: Post Reactions [Cheap]": "💰 Cheap",
-        "Telegram: Members &amp; Subscribers [ New ]": "👥 Members",
+        "Telegram: Post Reactions [Fast]":  "⚡ Fast Reaction",
+        "Telegram: Post Reactions [Cheap]": "💰 Cheap Reaction",
+        "Telegram: Members &amp; Subscribers [ New ]": "👥 Add Members",
+        "Telegram: Members &amp; Subscribers [ Cheap ]": "💸 Cheap Members",
+        "Telegram: Members &amp; Subscribers [ Cheap ]": "💸 Cheap Members",
     }
 
     rows = []
